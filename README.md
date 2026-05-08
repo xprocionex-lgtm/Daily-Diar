@@ -1,0 +1,1 @@
+Un diario digitale elegante e intuitivo dove annotare pensieri, emozioni e momenti importanti della giornata. Il sito offre anche consigli personalizzati, frasi motivazionali e suggerimenti utili per migliorare umore, produttività e benessere quotidiano, creando uno spazio personale semplice, accogliente e sempre accessibile online.
