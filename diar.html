@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diario Quotidiano</title>
+  <style>
+    :root {
+      --bg: #f3f7ff;
+      --card: #ffffff;
+      --text: #253047;
+      --subtle: #64728a;
+      --primary: #4a66ff;
+      --primary-soft: #ecf0ff;
+      --ok: #2ca58d;
+      --border: #dde4f1;
+      --shadow: 0 10px 28px rgba(30, 54, 102, 0.12);
+    }
+
+    body.dark {
+      --bg: #050505;
+      --card: #121212;
+      --text: #e9eefc;
+      --subtle: #b3bfd8;
+      --primary: #5f7cff;
+      --primary-soft: #1f2847;
+      --ok: #57d1b9;
+      --border: #2a3556;
+      --shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    .container {
+      width: min(980px, 92vw);
+      margin: 28px auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    h1, h2 {
+      margin: 0 0 10px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--subtle);
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    input[type="date"], textarea {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+      width: 100%;
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+      margin-top: 10px;
+    }
+
+    button {
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid #ccd7ff;
+    }
+
+    .info {
+      background: var(--primary-soft);
+      border: 1px solid #ced9ff;
+      border-radius: 10px;
+      padding: 10px;
+      color: #3f4e7d;
+      font-size: 0.95rem;
+    }
+
+    body.dark .info {
+      background: #131b31;
+      border-color: #3a4a7a;
+      color: #e9efff;
+    }
+
+    body.dark .info .ai-title,
+    body.dark .info strong,
+    body.dark .info li,
+    body.dark .info p {
+      color: #e9efff;
+    }
+
+    .counter {
+      font-weight: 700;
+      color: var(--ok);
+    }
+
+    .log {
+      max-height: 280px;
+      overflow: auto;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      white-space: pre-wrap;
+      background: #fbfcff;
+    }
+
+    body.dark .log {
+      background: #0c0f18;
+    }
+
+    body.dark input[type="date"],
+    body.dark textarea {
+      background: #0e1322;
+      color: var(--text);
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 8px 0 0;
+    }
+
+    .theme-fab {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      box-shadow: var(--shadow);
+    }
+
+    .ai-title {
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .status {
+      font-size: 0.9rem;
+      color: var(--subtle);
+      margin-top: 10px;
+    }
+
+    .bg-fab {
+      position: fixed;
+      right: 18px;
+      bottom: 72px;
+      z-index: 30;
+      box-shadow: var(--shadow);
+    }
+
+    #bgFileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="card">
+      <h1>Diario Personale Giornaliero</h1>
+      <p>Scrivi ogni giorno. L'app conserva lo storico, conta i giorni passati e aggiunge il nuovo testo allo storico.</p>
+      <div class="row">
+        <label for="entryDate">Data:</label>
+        <input type="date" id="entryDate" />
+      </div>
+      <textarea id="entryText" placeholder="Come ti senti oggi? Cosa e successo?"></textarea>
+      <div class="row">
+        <button id="saveEntry">Salva giornata</button>
+        <button id="loadDay" class="secondary">Carica giornata selezionata</button>
+        <button id="deleteDay" class="secondary">Cancella giornata selezionata</button>
+      </div>
+      <div class="row">
+        <span>Giornate totali salvate: <span class="counter" id="totalDays">0</span></span>
+        <span>Giorni passati dalla prima nota: <span class="counter" id="daysFromFirst">0</span></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Storico completo del diario</h2>
+      <p>Ogni nuovo giorno viene aggiunto allo stesso storico generale.</p>
+      <div id="fullDiary" class="log">Nessuna nota ancora.</div>
+    </section>
+
+    <section class="card">
+      <h2>Consigli AI personalizzati</h2>
+      <p class="status" id="aiStatus">Consigli automatici online attivi: risposta reale via web.</p>
+      <div class="info" id="adviceBox">Scrivi e salva una giornata per ricevere suggerimenti di benessere emotivo.</div>
+    </section>
+  </main>
+  <button id="uploadBgBtn" class="secondary bg-fab">Carica sfondo</button>
+  <input id="bgFileInput" type="file" accept="image/*" />
+  <button id="themeToggle" class="secondary theme-fab">Sfondo nero</button>
+
+  <script type="module">
+    import { GoogleGenAI } from "https://esm.sh/@google/genai";
+
+    const STORAGE_KEY = "diario_personale_v1";
+    const THEME_KEY = "diario_theme";
+    const BG_KEY = "diario_bg";
+    const GEMINI_MODEL = "gemini-3-flash-preview";
+    const GEMINI_API_KEY = "AIzaSyDHWgsMeM-dJJtYzQNimexBmC_qaoWkdho";
+    const dateInput = document.getElementById("entryDate");
+    const textArea = document.getElementById("entryText");
+    const saveBtn = document.getElementById("saveEntry");
+    const loadBtn = document.getElementById("loadDay");
+    const deleteBtn = document.getElementById("deleteDay");
+    const themeBtn = document.getElementById("themeToggle");
+    const aiStatusEl = document.getElementById("aiStatus");
+    const totalDaysEl = document.getElementById("totalDays");
+    const daysFromFirstEl = document.getElementById("daysFromFirst");
+    const fullDiaryEl = document.getElementById("fullDiary");
+    const adviceBox = document.getElementById("adviceBox");
+    const uploadBgBtn = document.getElementById("uploadBgBtn");
+    const bgFileInput = document.getElementById("bgFileInput");
+
+    function applyTheme(theme) {
+      const dark = theme === "dark";
+      document.body.classList.toggle("dark", dark);
+      themeBtn.textContent = dark ? "Sfondo chiaro" : "Sfondo nero";
+    }
+
+    function toggleTheme() {
+      const current = localStorage.getItem(THEME_KEY) || "light";
+      const next = current === "dark" ? "light" : "dark";
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+    }
+
+    function getBackgroundSettings() {
+      const raw = localStorage.getItem(BG_KEY);
+      if (!raw) return { image: "", fit: "cover" };
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          image: typeof parsed.image === "string" ? parsed.image : "",
+          fit: "cover"
+        };
+      } catch (error) {
+        return { image: "", fit: "cover" };
+      }
+    }
+
+    function saveBackgroundSettings(settings) {
+      localStorage.setItem(BG_KEY, JSON.stringify(settings));
+    }
+
+    function applyBackground(settings) {
+      const image = settings.image || "";
+      const fit = settings.fit || "cover";
+
+      if (!image) {
+        document.body.style.backgroundImage = "";
+        document.body.style.backgroundSize = "";
+        document.body.style.backgroundRepeat = "";
+        document.body.style.backgroundPosition = "";
+        document.body.style.backgroundAttachment = "";
+        return;
+      }
+
+      document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)), url("${image}")`;
+      document.body.style.backgroundAttachment = "fixed";
+      document.body.style.backgroundPosition = "center";
+      if (fit === "contain") {
+        document.body.style.backgroundSize = "contain";
+        document.body.style.backgroundRepeat = "no-repeat";
+      } else if (fit === "repeat") {
+        document.body.style.backgroundSize = "auto";
+        document.body.style.backgroundRepeat = "repeat";
+      } else {
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundRepeat = "no-repeat";
+      }
+    }
+
+    function onBackgroundFileSelected(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const imageData = String(reader.result || "");
+        if (!imageData) {
+          alert("Impossibile leggere il file immagine.");
+          return;
+        }
+        const settings = { image: imageData, fit: "cover" };
+        saveBackgroundSettings(settings);
+        applyBackground(settings);
+        alert("Sfondo da file applicato.");
+      };
+      reader.onerror = () => {
+        alert("Errore durante il caricamento dell'immagine.");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function todayISO() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      return new Date(now - offset).toISOString().slice(0, 10);
+    }
+
+    function getData() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { entries: {} };
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed && parsed.entries ? parsed : { entries: {} };
+      } catch (error) {
+        return { entries: {} };
+      }
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function sortedDates(entries) {
+      return Object.keys(entries).sort((a, b) => a.localeCompare(b));
+    }
+
+    function buildFullDiary(entries) {
+      const dates = sortedDates(entries);
+      if (!dates.length) return "Nessuna nota ancora.";
+
+      return dates
+        .map((date) => `[${date}]\n${entries[date].trim()}`)
+        .join("\n\n------------------------------\n\n");
+    }
+
+    function daysBetween(a, b) {
+      const one = new Date(a + "T00:00:00");
+      const two = new Date(b + "T00:00:00");
+      const diff = Math.floor((two - one) / (1000 * 60 * 60 * 24));
+      return Math.max(diff, 0);
+    }
+
+    function setAiStatus(message) {
+      aiStatusEl.textContent = message;
+    }
+
+    function buildAiPrompt(text) {
+      return [
+        "Sei un coach del benessere emotivo. Scrivi in italiano semplice.",
+        "Analizza questo testo di diario e fornisci:",
+        "1) emozione principale percepita",
+        "2) 3 consigli pratici e specifici per oggi",
+        "3) un mini piano per domani (3 punti).",
+        "Niente diagnosi mediche. Tono empatico e concreto.",
+        "",
+        "Testo diario:",
+        text
+      ].join("\n");
+    }
+
+    async function requestGeminiAdvice(text) {
+      const apiKey = GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("API key Gemini non trovata.");
+      }
+      if (apiKey === "INSERISCI_LA_TUA_GEMINI_API_KEY") {
+        throw new Error("Inserisci una API key reale nella costante GEMINI_API_KEY.");
+      }
+      const ai = new GoogleGenAI({ apiKey: apiKey });
+      const response = await ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: buildAiPrompt(text)
+      });
+      const aiText = response && response.text;
+      if (!aiText) {
+        throw new Error("Risposta Gemini vuota o non valida.");
+      }
+      return aiText;
+    }
+
+    function renderAiText(aiText) {
+      const lines = aiText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+      return '<p class="ai-title"><strong>Consigli da Gemini</strong></p><ul>' + lines.map((line) => "<li>" + line.replace(/^[\-\*\d\.\)\s]+/, "") + "</li>").join("") + "</ul>";
+    }
+
+    async function generateAdviceWithAi() {
+      const text = textArea.value.trim();
+      if (!text) {
+        alert("Scrivi prima la tua giornata.");
+        return;
+      }
+
+      setAiStatus("Sto chiedendo consigli a Gemini...");
+      try {
+        const aiText = await requestGeminiAdvice(text);
+        adviceBox.innerHTML = renderAiText(aiText);
+        setAiStatus("Consigli Gemini aggiornati con successo.");
+      } catch (error) {
+        adviceBox.innerHTML = '<p class="ai-title"><strong>Errore Gemini</strong></p><ul><li>' + String(error.message || error) + "</li><li>Verifica connessione internet, API key e avvio da server locale (http://localhost).</li></ul>";
+        setAiStatus("Errore chiamata web Gemini.");
+      }
+    }
+
+    function refreshUI() {
+      const data = getData();
+      const entries = data.entries;
+      const dates = sortedDates(entries);
+
+      totalDaysEl.textContent = String(dates.length);
+      fullDiaryEl.textContent = buildFullDiary(entries);
+
+      if (dates.length) {
+        daysFromFirstEl.textContent = String(daysBetween(dates[0], todayISO()));
+      } else {
+        daysFromFirstEl.textContent = "0";
+      }
+    }
+
+    function loadSelectedDay() {
+      const data = getData();
+      const day = dateInput.value;
+      textArea.value = data.entries[day] || "";
+    }
+
+    function deleteSelectedDay() {
+      const day = dateInput.value;
+      if (!day) {
+        alert("Scegli una data.");
+        return;
+      }
+
+      const data = getData();
+      if (!data.entries[day]) {
+        alert("Nessuna giornata salvata per questa data.");
+        return;
+      }
+
+      const confirmed = confirm("Vuoi davvero cancellare la giornata selezionata?");
+      if (!confirmed) return;
+
+      delete data.entries[day];
+      saveData(data);
+      textArea.value = "";
+      refreshUI();
+      adviceBox.innerHTML = "Scrivi e salva una giornata per ricevere suggerimenti di benessere emotivo.";
+      setAiStatus("Consigli automatici online attivi: risposta reale da Gemini via web.");
+      alert("Giornata cancellata.");
+    }
+
+    async function saveSelectedDay() {
+      const day = dateInput.value;
+      const text = textArea.value.trim();
+
+      if (!day) {
+        alert("Scegli una data.");
+        return;
+      }
+      if (!text) {
+        alert("Scrivi qualcosa nel diario prima di salvare.");
+        return;
+      }
+
+      const data = getData();
+      data.entries[day] = text;
+      saveData(data);
+      refreshUI();
+      await generateAdviceWithAi();
+      alert("Giornata salvata.");
+    }
+
+    dateInput.value = todayISO();
+    saveBtn.addEventListener("click", saveSelectedDay);
+    loadBtn.addEventListener("click", loadSelectedDay);
+    deleteBtn.addEventListener("click", deleteSelectedDay);
+    uploadBgBtn.addEventListener("click", () => bgFileInput.click());
+    bgFileInput.addEventListener("change", onBackgroundFileSelected);
+    themeBtn.addEventListener("click", toggleTheme);
+    applyTheme(localStorage.getItem(THEME_KEY) || "light");
+    const initialBg = getBackgroundSettings();
+    applyBackground(initialBg);
+    refreshUI();
+  </script>
+</body>
+</html>
